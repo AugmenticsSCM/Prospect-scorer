@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Augmentics — Prospect Scorer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b0f17;
+      --surface:   #131929;
+      --surface2:  #1a2236;
+      --border:    #243049;
+      --accent:    #3d7eff;
+      --accent2:   #5b9bff;
+      --text:      #e2e8f4;
+      --muted:     #7a8aaa;
+      --success:   #34d399;
+      --warn:      #fbbf24;
+      --danger:    #f87171;
+      --radius:    10px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+    }
+
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #3d7eff 0%, #7c3aed 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .brand span {
+      color: var(--accent2);
+    }
+
+    .header-tag {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      background: rgba(61,126,255,0.1);
+      border: 1px solid rgba(61,126,255,0.2);
+      border-radius: 20px;
+      padding: 4px 12px;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 0;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    /* ── Company input ── */
+    .company-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .company-card label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+    }
+
+    .company-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 600;
+      padding: 10px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      letter-spacing: -0.2px;
+    }
+
+    .company-input::placeholder { color: var(--muted); font-weight: 400; font-size: 16px; }
+    .company-input:focus { border-color: var(--accent); }
+
+    /* ── Score summary bar ── */
+    .summary-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .total-score-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .total-score-value {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -2px;
+      transition: color 0.4s;
+    }
+
+    .total-score-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .total-score-max {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .summary-divider {
+      width: 1px;
+      height: 60px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .summary-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .fit-label {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      transition: color 0.4s;
+    }
+
+    .fit-sublabel {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .overall-bar-track {
+      height: 8px;
+      background: var(--bg);
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .overall-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.5s ease, background 0.4s;
+    }
+
+    /* ── Dimension cards grid ── */
+    .dimensions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 660px) {
+      .dimensions-grid { grid-template-columns: 1fr; }
+      .company-card { flex-direction: column; align-items: flex-start; }
+      .summary-bar { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .summary-divider { width: 100%; height: 1px; }
+    }
+
+    .dim-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .dim-card:focus-within {
+      border-color: rgba(61,126,255,0.5);
+    }
+
+    .dim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .dim-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .dim-name {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.1px;
+    }
+
+    .dim-description {
+      font-size: 11px;
+      color: var(--muted);
+      max-width: 210px;
+      line-height: 1.5;
+    }
+
+    .dim-score-badge {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1;
+      min-width: 36px;
+      text-align: right;
+      transition: color 0.3s;
+    }
+
+    /* Slider */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slider-label-min, .slider-label-max {
+      font-size: 11px;
+      color: var(--muted);
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 6px;
+      border-radius: 99px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      outline: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 0 2px var(--accent);
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="range"]:hover::-webkit-slider-thumb,
+    input[type="range"]:focus::-webkit-slider-thumb {
+      background: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(61,126,255,0.3);
+    }
+
+    /* Dimension bar */
+    .dim-bar-track {
+      height: 4px;
+      background: var(--bg);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .dim-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s ease, background 0.3s;
+    }
+
+    /* Note textarea */
+    .dim-note {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 9px 12px;
+      resize: none;
+      outline: none;
+      min-height: 60px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      color: var(--muted);
+    }
+
+    .dim-note::placeholder { color: #3d4f6e; }
+
+    .dim-note:focus {
+      border-color: rgba(61,126,255,0.4);
+      color: var(--text);
+    }
+
+    /* ── Radar chart ── */
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .chart-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    #radar-canvas {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .chart-legend {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .legend-score {
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 20px;
+      text-align: right;
+    }
+
+    .legend-bar-track {
+      flex: 1;
+      height: 4px;
+      background: var(--bg);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .legend-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Actions ── */
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+      letter-spacing: 0.1px;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { background: var(--border); color: var(--text); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3d7eff, #7c3aed);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(61,126,255,0.35);
+    }
+
+    .btn-primary:hover { opacity: 0.9; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 22px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">A</div>
+  <div class="brand">Augmentics <span>SCM</span></div>
+  <div class="header-tag">Prospect Scorer</div>
+</header>
+
+<div class="container">
+  <h1 class="page-title">Prospect Evaluation</h1>
+  <p class="page-subtitle">Score each fit dimension 1–10. Higher scores indicate stronger alignment with Augmentics AI.</p>
+
+  <!-- Company name -->
+  <div class="company-card">
+    <label for="company-name">Company</label>
+    <input
+      id="company-name"
+      class="company-input"
+      type="text"
+      placeholder="Enter prospect company name…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-bar">
+    <div class="total-score-block">
+      <div class="total-score-value" id="total-value">0</div>
+      <div class="total-score-max">/ 60</div>
+      <div class="total-score-label">Total Score</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-right">
+      <div class="fit-label" id="fit-label">—</div>
+      <div class="fit-sublabel" id="fit-sublabel">Enter scores to assess fit</div>
+      <div class="overall-bar-track">
+        <div class="overall-bar-fill" id="overall-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 Dimension cards -->
+  <div class="dimensions-grid" id="dimensions-grid"></div>
+
+  <!-- Radar chart -->
+  <div class="chart-card">
+    <div>
+      <div class="chart-title">Fit Profile</div>
+      <canvas id="radar-canvas" width="260" height="260"></canvas>
+    </div>
+    <div class="chart-legend" id="chart-legend"></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-ghost" id="btn-reset">Reset</button>
+    <button class="btn btn-ghost" id="btn-copy">Copy Summary</button>
+    <button class="btn btn-primary" id="btn-export">Export PDF</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Data ─────────────────────────────────────────────────────────────────
+  const DIMENSIONS = [
+    {
+      key: 'transaction_density',
+      name: 'Transaction Density',
+      description: 'Volume & frequency of supply chain transactions',
+      placeholder: 'e.g. High PO volume, thousands of daily transactions…',
+    },
+    {
+      key: 'system_fragmentation',
+      name: 'System Fragmentation',
+      description: 'Number of disconnected systems & data silos',
+      placeholder: 'e.g. 6 ERPs, disparate WMS and TMS platforms…',
+    },
+    {
+      key: 'sku_entropy',
+      name: 'SKU Entropy',
+      description: 'Catalog complexity, variants, and churn rate',
+      placeholder: 'e.g. 50k+ active SKUs, frequent new product launches…',
+    },
+    {
+      key: 'communication_noise',
+      name: 'Communication Noise',
+      description: 'Volume of unstructured supplier/partner comms',
+      placeholder: 'e.g. Heavy email, spreadsheet-based coordination…',
+    },
+    {
+      key: 'context_perishability',
+      name: 'Context Perishability',
+      description: 'How quickly operational context becomes stale',
+      placeholder: 'e.g. Real-time inventory changes, volatile demand…',
+    },
+    {
+      key: 'decision_nuance',
+      name: 'Decision Nuance',
+      description: 'Complexity of tradeoffs in operational decisions',
+      placeholder: 'e.g. Multi-constraint optimization, regulatory factors…',
+    },
+  ];
+
+  const DIM_COLORS = [
+    '#3d7eff', '#7c3aed', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e'
+  ];
+
+  const state = {
+    company: '',
+    scores: Object.fromEntries(DIMENSIONS.map(d => [d.key, 5])),
+    notes:  Object.fromEntries(DIMENSIONS.map(d => [d.key, ''])),
+  };
+
+  // ── Score color helper ────────────────────────────────────────────────────
+  function scoreColor(score, max = 10) {
+    const pct = score / max;
+    if (pct >= 0.8) return 'var(--success)';
+    if (pct >= 0.6) return 'var(--accent2)';
+    if (pct >= 0.4) return 'var(--warn)';
+    return 'var(--danger)';
+  }
+
+  function fitLabel(total) {
+    if (total === 0) return { label: '—', sub: 'Enter scores to assess fit' };
+    if (total >= 50) return { label: 'Exceptional Fit', sub: 'Strong candidate — prioritize for outreach' };
+    if (total >= 40) return { label: 'Strong Fit', sub: 'High alignment across most dimensions' };
+    if (total >= 30) return { label: 'Moderate Fit', sub: 'Good potential with targeted value prop' };
+    if (total >= 20) return { label: 'Weak Fit', sub: 'Significant gaps — de-prioritize or qualify further' };
+    return { label: 'Poor Fit', sub: 'Not aligned with Augmentics core use cases' };
+  }
+
+  // ── Build dimension cards ─────────────────────────────────────────────────
+  const grid = document.getElementById('dimensions-grid');
+
+  DIMENSIONS.forEach((dim, i) => {
+    const card = document.createElement('div');
+    card.className = 'dim-card';
+    card.dataset.key = dim.key;
+
+    card.innerHTML = `
+      <div class="dim-header">
+        <div class="dim-meta">
+          <div class="dim-name">${dim.name}</div>
+          <div class="dim-description">${dim.description}</div>
+        </div>
+        <div class="dim-score-badge" id="badge-${dim.key}" style="color:${DIM_COLORS[i]}">5</div>
+      </div>
+      <div class="dim-bar-track">
+        <div class="dim-bar-fill" id="bar-${dim.key}" style="width:50%;background:${DIM_COLORS[i]}"></div>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label-min">1</span>
+        <input
+          type="range"
+          id="slider-${dim.key}"
+          min="1" max="10" step="1"
+          value="5"
+          aria-label="${dim.name} score"
+        />
+        <span class="slider-label-max">10</span>
+      </div>
+      <textarea
+        class="dim-note"
+        id="note-${dim.key}"
+        rows="2"
+        placeholder="${dim.placeholder}"
+        aria-label="${dim.name} note"
+      ></textarea>
+    `;
+
+    grid.appendChild(card);
+
+    // Wire slider
+    const slider = card.querySelector(`#slider-${dim.key}`);
+    slider.addEventListener('input', () => {
+      state.scores[dim.key] = parseInt(slider.value, 10);
+      updateDimDisplay(dim.key, i);
+      updateSummary();
+      drawRadar();
+    });
+
+    // Wire note
+    const note = card.querySelector(`#note-${dim.key}`);
+    note.addEventListener('input', () => {
+      state.notes[dim.key] = note.value;
+    });
+  });
+
+  function updateDimDisplay(key, idx) {
+    const score = state.scores[key];
+    const pct = ((score - 1) / 9) * 100;
+    document.getElementById(`badge-${key}`).textContent = score;
+    document.getElementById(`bar-${key}`).style.width = `${(score / 10) * 100}%`;
+    // Slider track gradient
+    const slider = document.getElementById(`slider-${key}`);
+    slider.style.background = `linear-gradient(to right, ${DIM_COLORS[idx]} ${pct}%, var(--bg) ${pct}%)`;
+  }
+
+  // Initialize slider gradients
+  DIMENSIONS.forEach((d, i) => updateDimDisplay(d.key, i));
+
+  // ── Summary update ────────────────────────────────────────────────────────
+  function updateSummary() {
+    const total = Object.values(state.scores).reduce((a, b) => a + b, 0);
+    const pct = (total / 60) * 100;
+    const color = scoreColor(total, 60);
+    const { label, sub } = fitLabel(total);
+
+    document.getElementById('total-value').textContent = total;
+    document.getElementById('total-value').style.color = color;
+    document.getElementById('overall-bar').style.width = `${pct}%`;
+    document.getElementById('overall-bar').style.background = color;
+    document.getElementById('fit-label').textContent = label;
+    document.getElementById('fit-label').style.color = color;
+    document.getElementById('fit-sublabel').textContent = sub;
+
+    updateLegend();
+  }
+
+  // ── Legend ────────────────────────────────────────────────────────────────
+  function updateLegend() {
+    const legend = document.getElementById('chart-legend');
+    legend.innerHTML = '';
+    DIMENSIONS.forEach((dim, i) => {
+      const score = state.scores[dim.key];
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `
+        <div class="legend-dot" style="background:${DIM_COLORS[i]}"></div>
+        <div class="legend-name">${dim.name}</div>
+        <div class="legend-bar-track">
+          <div class="legend-bar-fill" style="width:${(score/10)*100}%;background:${DIM_COLORS[i]}"></div>
+        </div>
+        <div class="legend-score" style="color:${DIM_COLORS[i]}">${score}</div>
+      `;
+      legend.appendChild(item);
+    });
+  }
+
+  // ── Radar chart ───────────────────────────────────────────────────────────
+  const canvas = document.getElementById('radar-canvas');
+  const ctx = canvas.getContext('2d');
+  const CX = 130, CY = 130, R = 100;
+  const N = 6;
+
+  function radarPoint(idx, val, maxVal) {
+    const angle = (Math.PI * 2 * idx) / N - Math.PI / 2;
+    const r = (val / maxVal) * R;
+    return { x: CX + r * Math.cos(angle), y: CY + r * Math.sin(angle) };
+  }
+
+  function drawRadar() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Grid rings
+    const rings = [2, 4, 6, 8, 10];
+    rings.forEach(v => {
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        const p = radarPoint(i, v, 10);
+        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = v === 10 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    // Axes
+    for (let i = 0; i < N; i++) {
+      const p = radarPoint(i, 10, 10);
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Axis labels
+    ctx.font = '600 9.5px Inter, system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(122,138,170,0.9)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const shortNames = ['TX Density', 'Sys Frag.', 'SKU Entropy', 'Comm. Noise', 'Ctx. Perishability', 'Dec. Nuance'];
+    for (let i = 0; i < N; i++) {
+      const angle = (Math.PI * 2 * i) / N - Math.PI / 2;
+      const labelR = R + 22;
+      const lx = CX + labelR * Math.cos(angle);
+      const ly = CY + labelR * Math.sin(angle);
+      ctx.fillText(shortNames[i], lx, ly);
+    }
+
+    // Data polygon fill
+    const scores = DIMENSIONS.map(d => state.scores[d.key]);
+    ctx.beginPath();
+    scores.forEach((s, i) => {
+      const p = radarPoint(i, s, 10);
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    });
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(61,126,255,0.12)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(61,126,255,0.7)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Data points
+    scores.forEach((s, i) => {
+      const p = radarPoint(i, s, 10);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = DIM_COLORS[i];
+      ctx.fill();
+      ctx.strokeStyle = '#0b0f17';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  }
+
+  // ── Company name ──────────────────────────────────────────────────────────
+  document.getElementById('company-name').addEventListener('input', e => {
+    state.company = e.target.value;
+  });
+
+  // ── Reset ─────────────────────────────────────────────────────────────────
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    document.getElementById('company-name').value = '';
+    state.company = '';
+    DIMENSIONS.forEach((d, i) => {
+      state.scores[d.key] = 5;
+      state.notes[d.key] = '';
+      document.getElementById(`slider-${d.key}`).value = 5;
+      document.getElementById(`note-${d.key}`).value = '';
+      updateDimDisplay(d.key, i);
+    });
+    updateSummary();
+    drawRadar();
+    toast('Scores reset.');
+  });
+
+  // ── Copy summary ──────────────────────────────────────────────────────────
+  document.getElementById('btn-copy').addEventListener('click', () => {
+    const total = Object.values(state.scores).reduce((a, b) => a + b, 0);
+    const { label } = fitLabel(total);
+    const company = state.company || 'Unnamed Company';
+    const lines = [
+      `Augmentics Prospect Score — ${company}`,
+      `Overall: ${total}/60 (${label})`,
+      '',
+      ...DIMENSIONS.map(d => {
+        const note = state.notes[d.key] ? `  → ${state.notes[d.key]}` : '';
+        return `${d.name}: ${state.scores[d.key]}/10${note ? '\n' + note : ''}`;
+      }),
+      '',
+      `Generated ${new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })}`,
+    ];
+    navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Summary copied to clipboard.'));
+  });
+
+  // ── Export PDF ────────────────────────────────────────────────────────────
+  document.getElementById('btn-export').addEventListener('click', () => {
+    window.print();
+  });
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  let toastTimer;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  updateSummary();
+  drawRadar();
+  updateLegend();
+</script>
+
+<!-- Print styles -->
+<style media="print">
+  body { background: #fff !important; color: #000 !important; }
+  header, .actions, #toast { display: none !important; }
+  .container { padding: 0 !important; }
+  .dim-card, .summary-bar, .company-card, .chart-card {
+    border: 1px solid #ccc !important;
+    background: #fff !important;
+    break-inside: avoid;
+  }
+  :root {
+    --bg: #f5f5f5;
+    --surface: #fff;
+    --text: #111;
+    --muted: #555;
+    --border: #ddd;
+  }
+</style>
+
+</body>
+</html>
