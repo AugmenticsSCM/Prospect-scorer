@@ -482,6 +482,44 @@
 
     .btn-primary:hover { opacity: 0.9; }
 
+    .btn-ai {
+      background: linear-gradient(135deg, #06b6d4, #3d7eff);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(6,182,212,0.35);
+      white-space: nowrap;
+    }
+
+    .btn-ai:hover { opacity: 0.9; }
+    .btn-ai:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .ai-spinner {
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .rationale-box {
+      background: rgba(6,182,212,0.06);
+      border: 1px solid rgba(6,182,212,0.2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .rationale-box.visible { display: block; }
+
     /* ── Toast ── */
     #toast {
       position: fixed;
@@ -536,6 +574,7 @@
       autocomplete="off"
       spellcheck="false"
     />
+    <button class="btn btn-ai" id="btn-ai-score">Score with AI</button>
   </div>
 
   <!-- Summary -->
@@ -552,6 +591,7 @@
       <div class="overall-bar-track">
         <div class="overall-bar-fill" id="overall-bar" style="width:0%"></div>
       </div>
+      <div class="rationale-box" id="rationale-box"></div>
     </div>
   </div>
 
@@ -851,6 +891,7 @@
       document.getElementById(`note-${d.key}`).value = '';
       updateDimDisplay(d.key, i);
     });
+    document.getElementById('rationale-box').classList.remove('visible');
     updateSummary();
     drawRadar();
     toast('Scores reset.');
@@ -889,6 +930,70 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
   }
+
+  // ── AI Scoring ────────────────────────────────────────────────────────────
+  const DIM_KEY_MAP = {
+    td: 'transaction_density',
+    sf: 'system_fragmentation',
+    se: 'sku_entropy',
+    cn: 'communication_noise',
+    cp: 'context_perishability',
+    dn: 'decision_nuance',
+  };
+
+  const btnAI = document.getElementById('btn-ai-score');
+
+  btnAI.addEventListener('click', async () => {
+    const company = document.getElementById('company-name').value.trim();
+    if (!company) {
+      toast('Enter a company name first.');
+      return;
+    }
+
+    btnAI.disabled = true;
+    btnAI.innerHTML = '<span class="ai-spinner"></span>Scoring…';
+
+    try {
+      const res = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Populate sliders and state
+      Object.entries(DIM_KEY_MAP).forEach(([shortKey, dimKey], i) => {
+        const score = Math.max(1, Math.min(10, Math.round(data[shortKey] ?? 5)));
+        state.scores[dimKey] = score;
+        const slider = document.getElementById(`slider-${dimKey}`);
+        if (slider) slider.value = score;
+        updateDimDisplay(dimKey, i);
+      });
+
+      updateSummary();
+      drawRadar();
+
+      // Show rationale
+      if (data.rationale) {
+        const box = document.getElementById('rationale-box');
+        box.textContent = data.rationale;
+        box.classList.add('visible');
+      }
+
+      toast(`AI scored ${company} — review and adjust as needed.`);
+    } catch (err) {
+      toast(`Error: ${err.message}`);
+    } finally {
+      btnAI.disabled = false;
+      btnAI.innerHTML = 'Score with AI';
+    }
+  });
 
   // ── Init ──────────────────────────────────────────────────────────────────
   updateSummary();
